@@ -126,7 +126,9 @@ module Impala
       when 'double', 'float'
         value.to_f
       when "timestamp"
-        Time.parse(value)
+        # Impala timestamps are time since epoch, so let's set the
+        # time zone to UTC
+        Time.parse(value + ' UTC')
       else
         raise ParsingError.new("Unknown type: #{schema.type}")
       end
