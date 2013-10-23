@@ -90,7 +90,7 @@ module Impala
       query.query = sanitized_query
 
       if options and options.length > 0
-        query.configuration = options.map{|k,v| "#{k}:#{v.to_s}"}
+        query.configuration = options.map{|k,v| "#{k}=#{v.to_s}"}
       end
 
       @service.query(query)
