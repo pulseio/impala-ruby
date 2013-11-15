@@ -53,6 +53,9 @@ module Impala
     # load the entire result set into memory, so if you're dealing with lots
     # of rows, {#execute} may work better.
     # @param [String] query the query you want to run
+    # @param [Hash] Hash of execute optons that are passed along to
+    #               underlying thrift call.  This can be used to
+    #               customize your Impala query
     # @return [Array<Hash>] an array of hashes, one for each row.
     def query(raw_query, options = {})
       execute(raw_query, options).fetch_all
@@ -60,8 +63,11 @@ module Impala
 
     # Perform a query and return a cursor for iterating over the results.
     # @param [String] query the query you want to run
+    # @param [Hash] Hash of execute optons that are passed along to
+    #               underlying thrift call.  This can be used to
+    #               customize your Impala query
     # @return [Cursor] a cursor for the result rows
-    def execute(raw_query, options)
+    def execute(raw_query, options = {})
       raise ConnectionError.new("Connection closed") unless open?
 
       query = sanitize_query(raw_query)
@@ -85,7 +91,7 @@ module Impala
       ([command] + words[1..-1]).join(' ')
     end
 
-    def send_query(sanitized_query, options)
+    def send_query(sanitized_query, options = {})
       query = Protocol::Beeswax::Query.new
       query.query = sanitized_query
 
