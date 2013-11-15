@@ -35,8 +35,8 @@ module Impala
     def close
       return unless @connected
 
-      @transport.close
       @connected = false
+      @transport.close
     end
 
     # Returns true if the connection is currently open.
@@ -47,7 +47,10 @@ module Impala
     # Refresh the metadata store
     def refresh
       raise ConnectionError.new("Connection closed") unless open?
-      @service.ResetCatalog
+
+      use_service do |service|
+        service.ResetCatalog
+      end
     end
 
     # Perform a query and return all the results. This will
@@ -74,7 +77,20 @@ module Impala
       query = sanitize_query(raw_query)
       handle = send_query(query, options)
 
-      Cursor.new(handle, @service)
+      Cursor.new(handle, self)
+    end
+
+    # Passes service to invoked block.  If block results in an
+    # IOError, socket will be closed.  This allows connections to heal    
+    def use_service &block
+      
+      begin
+        yield @service
+      rescue Thrift::TransportException, IOError => e
+        close()
+        raise e
+      end
+
     end
 
     private
@@ -98,11 +114,14 @@ module Impala
       if options and options.length > 0
         query.configuration = options.map{|k,v| "#{k}=#{v.to_s}"}
       end
-      @service.executeAndWait(query, @log_context)
+      
+      use_service do |service|
+        service.executeAndWait(query, @log_context)
+      end
     end
 
     def close_handle(handle)
-      @service.close(handle)
+      use_service {|s| s.close(handle)}
     end
   end
 end

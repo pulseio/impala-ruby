@@ -6,10 +6,9 @@ module Impala
     BUFFER_SIZE = 1024
     include Enumerable
 
-    def initialize(handle, service)
+    def initialize(handle, connection)
       @handle = handle
-      @service = service
-
+      @connection = connection
 
       @row_buffer = []
       @done = false
@@ -57,7 +56,10 @@ module Impala
     # can no longer fetch any rows from it.
     def close
       @open = false
-      @service.close(@handle)
+
+      @connection.use_service do |service|
+        service.close(@handle)
+      end
     end
 
     # Returns true if the cursor is still open.
@@ -73,7 +75,9 @@ module Impala
     private
 
     def metadata
-      @metadata ||= @service.get_results_metadata(@handle)
+      @connection.use_service do |service|
+        @metadata ||= service.get_results_metadata(@handle)
+      end
     end
 
     def fetch_more
@@ -83,11 +87,14 @@ module Impala
     def fetch_batch
       return if @done
 
-      begin
-        res = @service.fetch(@handle, false, BUFFER_SIZE)
-      rescue Protocol::Beeswax::BeeswaxException => e
-        @closed = true
-        raise CursorError.new("Cursor has expired or been closed")
+      res = nil
+      @connection.use_service do |service|
+        begin
+          res = service.fetch(@handle, false, BUFFER_SIZE)
+        rescue Protocol::Beeswax::BeeswaxException => e
+          @closed = true
+          raise CursorError.new("Cursor has expired or been closed")
+        end
       end
 
       rows = res.data.map { |raw| parse_row(raw) }

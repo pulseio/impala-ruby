@@ -44,5 +44,23 @@ describe Impala::Connection do
       assert_raises(Impala::InvalidQueryError) { @connection.send(:sanitize_query, '')}
       assert_raises(Impala::InvalidQueryError) { @connection.send(:sanitize_query, 'HERRO herro herro')}
     end
+
+    it 'should re-raise exception and mark connection as closed if an IOError is thrown' do
+      @connection.expects(:close).once
+      assert_raises(IOError) do
+        @connection.use_service do |service|
+          raise IOError.new
+        end 
+      end
+    end
+
+    it 'should re-raise exception and mark connection as closed if a Thrift::TransportException is thrown' do
+      @connection.expects(:close).once
+      assert_raises(Thrift::TransportException) do
+        @connection.use_service do |service|
+          raise Thrift::TransportException.new
+        end 
+      end
+    end
   end
 end
