@@ -9,6 +9,7 @@ module Impala
       @host = host
       @port = port
       @connected = false
+      @log_context = rand(10000).to_s # I believe this is used for debugging
       open
     end
 
@@ -73,7 +74,6 @@ module Impala
       query = sanitize_query(raw_query)
       handle = send_query(query, options)
 
-      wait_for_result(handle)
       Cursor.new(handle, @service)
     end
 
@@ -98,26 +98,7 @@ module Impala
       if options and options.length > 0
         query.configuration = options.map{|k,v| "#{k}=#{v.to_s}"}
       end
-
-      @service.query(query)
-    end
-
-    def wait_for_result(handle)
-      #TODO select here, or something
-      while true
-        state = @service.get_state(handle)
-        if state == Protocol::Beeswax::QueryState::FINISHED
-          break
-        elsif state == Protocol::Beeswax::QueryState::EXCEPTION
-          close_handle(handle)
-          raise ConnectionError.new("The query was aborted")
-        end
-
-        sleep(SLEEP_INTERVAL)
-      end
-    rescue
-      close_handle(handle)
-      raise
+      @service.executeAndWait(query, @log_context)
     end
 
     def close_handle(handle)

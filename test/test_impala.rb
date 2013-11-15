@@ -45,20 +45,4 @@ describe Impala::Connection do
       assert_raises(Impala::InvalidQueryError) { @connection.send(:sanitize_query, 'HERRO herro herro')}
     end
   end
-
-  describe '#wait_for_result' do
-    before do
-      Impala::Connection.any_instance.stubs(:open)
-      @connection = Impala::Connection.new('test', 1234)
-      @service = stub(:get_state => nil)
-      @connection.instance_variable_set('@service', @service)
-    end
-
-    it 'should close the handle if an exception is raised, and then re-raise' do
-      handle = stub()
-      @service.expects(:close).with(handle).once
-      @service.expects(:get_state).raises(StandardError)
-      assert_raises(StandardError) { @connection.send(:wait_for_result, handle) }
-    end
-  end
 end
