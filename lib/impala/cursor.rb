@@ -56,7 +56,7 @@ module Impala
     # can no longer fetch any rows from it.
     def close
       @open = false
-
+      
       @connection.use_service do |service|
         service.close(@handle)
       end
@@ -92,8 +92,8 @@ module Impala
         begin
           res = service.fetch(@handle, false, BUFFER_SIZE)
         rescue Protocol::Beeswax::BeeswaxException => e
-          @closed = true
-          raise CursorError.new("Cursor has expired or been closed: #{e.to_s}")
+          @open = false
+          raise CursorError.new("Cursor has expired or been closed: #{e.to_s}, #{e.message}")
         end
       end
 
