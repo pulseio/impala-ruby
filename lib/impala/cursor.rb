@@ -32,7 +32,7 @@ module Impala
     #    left
     # @see #fetch_all
     def fetch_row
-      raise CursorError.new("Cursor has expired or been closed") unless @open
+      raise CursorError.new("Cursor has expired or been closed") unless open? or @done
 
       if @row_buffer.empty?
         if @done
@@ -99,7 +99,10 @@ module Impala
 
       rows = res.data.map { |raw| parse_row(raw) }
       @row_buffer.concat(rows)
-      @done = true unless res.has_more
+      unless res.has_more
+        close()
+        @done = true
+      end
     end
 
     def parse_row(raw)
