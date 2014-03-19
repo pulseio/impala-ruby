@@ -96,15 +96,7 @@ module Impala
     private
 
     def sanitize_query(raw_query)
-      words = raw_query.split
-      raise InvalidQueryError.new("Empty query") if words.empty?
-
-      command = words.first.downcase
-      if !KNOWN_COMMANDS.include?(command)
-        raise InvalidQueryError.new("Unrecognized command: '#{words.first}'")
-      end
-
-      ([command] + words[1..-1]).join(' ')
+      raw_query
     end
 
     def send_query(sanitized_query, options = {})

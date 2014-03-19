@@ -29,38 +29,4 @@ describe 'Impala.connect' do
 end
 
 describe Impala::Connection do
-  describe '#sanitize_query' do
-    before do
-      Impala::Connection.any_instance.stubs(:open)
-      @connection = Impala::Connection.new('test', 1234)
-    end
-
-    it 'should downcase the command but nothing else' do
-      query = 'SELECT blah FROM Blah'
-      assert_equal('select blah FROM Blah', @connection.send(:sanitize_query, query))
-    end
-
-    it 'should reject empty or invalid queries' do
-      assert_raises(Impala::InvalidQueryError) { @connection.send(:sanitize_query, '')}
-      assert_raises(Impala::InvalidQueryError) { @connection.send(:sanitize_query, 'HERRO herro herro')}
-    end
-
-    it 'should re-raise exception and mark connection as closed if an IOError is thrown' do
-      @connection.expects(:close).once
-      assert_raises(IOError) do
-        @connection.use_service do |service|
-          raise IOError.new
-        end 
-      end
-    end
-
-    it 'should re-raise exception and mark connection as closed if a Thrift::TransportException is thrown' do
-      @connection.expects(:close).once
-      assert_raises(Thrift::TransportException) do
-        @connection.use_service do |service|
-          raise Thrift::TransportException.new
-        end 
-      end
-    end
-  end
 end
