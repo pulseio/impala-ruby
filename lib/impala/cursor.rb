@@ -134,7 +134,11 @@ module Impala
       when 'tinyint', 'int', 'bigint'
         value.to_i
       when 'double', 'float'
-        value.to_f
+        if value == 'Infinity'
+          Float::INFINITY
+        else
+          value.to_f
+        end
       when "timestamp"
         # Impala timestamps are time since epoch, so let's set the
         # time zone to UTC
