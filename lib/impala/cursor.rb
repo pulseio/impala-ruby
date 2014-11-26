@@ -110,16 +110,17 @@ module Impala
       fields = raw.split(metadata.delim)
 
       fields.zip(metadata.schema.fieldSchemas).each do |raw_value, schema|
-        value = convert_raw_value(raw_value, schema)
-        row[schema.name.to_sym] = value
+        if schema
+          value = convert_raw_value(raw_value, schema)
+          row[schema.name.to_sym] = value
+        end
       end
 
       row
     end
 
     def convert_raw_value(value, schema)
-      return nil if value == 'NULL' && schema.type == 'null'
-
+      return nil if schema == nil or (value == 'NULL' && schema.type == 'null')
       case schema.type
       when 'string'
         value
